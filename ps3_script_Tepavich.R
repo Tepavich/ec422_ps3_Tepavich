@@ -207,3 +207,9 @@ can_gas |>
   theme_minimal()
 #Winter months tend to have higher production which makes sense because natural gas is used for heating. 
 
+can_gas |>
+  gg_subseries(log_volume) +
+  labs(
+    title = "Subseries Plot: Canadian Gas Production",
+    y = "log(Volume)"
+  )
