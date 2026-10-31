@@ -136,3 +136,74 @@ retail_nsa |>
   ) +
   theme_minimal()
 #The case for logging this data is weaker than that of can_gas because the seasonal swings are more even and do not change after logging. 
+
+can_gas <- can_gas |>
+  mutate(
+    growth_direct = 100 * difference(Volume) / lag(Volume),
+    growth_logdiff = 100 * difference(log_volume)
+  )
+
+can_gas |> autoplot(growth_direct) +
+  labs(
+    title = "Growth in Canadian Natural Gas Production",
+    x = NULL,
+    y = "Percent"
+  ) +
+  theme_minimal()
+
+can_gas <- can_gas |>
+  mutate(growth_gap = abs(growth_direct - growth_logdiff))
+
+can_gas |>
+  autoplot(growth_gap) +
+  labs(
+    title = "Difference Between Direct and Log Growth Rates",
+    x = NULL,
+    y = "Absolute Difference (%)"
+  ) +
+  theme_minimal()
+#The log difference approximation is pretty good in this case as most of the values are small, although it's probably less accurate during the larger spikes in the differences.
+
+retail_ts <- retail_ts |>
+  group_by_key() |>
+  mutate(growth_mom = 100 * difference(log(sales))) |>
+  ungroup()
+
+retail_ts |>
+  autoplot(growth_mom) +
+  labs(
+    title = "Month-over-Month Growth: SA vs. NSA Retail Sales",
+    x = NULL, y = "Growth rate (%)", color = NULL
+  ) +
+  theme_minimal()
+#The month-over-month growth rates for the two series are very similar, although the NSA series has more volatility. The SA series is smoother and easier to interpret. The SA series also shows a large drop in growth during the 2008 recession and a large spike in growth during the COVID pandemic.
+#It makes sense for the NSA series to be noisier because it has those monthly spikes in January that the SA series does not have.
+
+retail_ts |>
+  filter(series_id == "RSAFSNA") |>
+  gg_season(sales) +
+  labs(
+    title = "Seasonal Pattern in NSA Retail Sales",
+    y = "Millions of dollars"
+  ) +
+  theme_minimal()
+
+retail_ts |>
+  filter(series_id == "RSAFS") |>
+  gg_season(sales) +
+  labs(
+    title = "Seasonal Pattern in SA Retail Sales",
+    y = "Millions of dollars"
+  ) +
+  theme_minimal()
+#The seasonal pattern in the NSA series is very strong, the SA series is much smoother and easier to interpret than the NSA series.
+
+can_gas |>
+  gg_season(log_volume) +
+  labs(
+    title = "Seasonal Pattern in Canadian Natural Gas Production",
+    y = "Log(Volume)"
+  ) +
+  theme_minimal()
+#Winter months tend to have higher production which makes sense because natural gas is used for heating. 
+
