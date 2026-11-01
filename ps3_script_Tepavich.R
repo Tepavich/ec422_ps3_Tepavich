@@ -244,3 +244,33 @@ sa_compare |>
   theme_minimal()
 #My adjustment kind of matches the official one in some places; it differs the greatest in the years around 2020.
 
+can_gas_fit <- can_gas |>
+  model(TSLM(log_volume ~ trend() + season()))
+
+report(can_gas_fit)
+
+can_gas_fit |>
+  tidy() |>
+  select(term, estimate, std.error, statistic, p.value) |>
+  knitr::kable(digits = 3)
+#estimated average monthly growth rate is 0.4%
+#June has the most significant seasonal effect
+
+can_gas_fit |>
+  augment() |>
+  ggplot(aes(x = Month)) +
+  geom_line(aes(y = log_volume, color = "Actual")) +
+  geom_line(aes(y = .fitted, color = "Fitted")) +
+  labs(title = "Linear Trend + Seasonal Dummies Fit: Canadian Gas Production",
+       y = "log(Volume)", color = NULL) +
+  theme_minimal()
+#The fitted line tracks pretty well but it misses some spikes from 1960-1980.
+
+can_gas_fit |> gg_tsresiduals()
+
+can_gas_fit |>
+  augment() |>
+  features(.innov, ljung_box, lag = 24)
+#There is visible structure left in the residuals. The Ljung box test came back with a p value of nearly zero meaning we reject the null hypothesis of white noise.
+
+
