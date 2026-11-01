@@ -301,3 +301,16 @@ forecast::dm.test(errs$snaive, errs$tslm, h = 1, power = 1)
 #DM stat = -31.278; pvalue < 2.2e-16
 #Reject the null hypothesis of equal forecast accuracy meaning the models were significantly different. 
 
+gas_cv_fc <- can_gas |>
+  select(Month, Volume) |>
+  slide_tsibble(.size = 240, .step = 1) |>
+  model(snaive = SNAIVE(Volume),
+        tslm   = TSLM(log(Volume) ~ trend() + season())) |>
+  forecast(h = 1)
+
+gas_cv_fc |>
+  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE))
+#snaive: MAE=0.562, RMSE=0.702
+#tslm: MAE=2.09, RMSE=2.42
+#the accuracy of the tslm model drastically improved, although not enough to make it better than the snaive model. My guess is this is because the data generating process changed over time and the dummie variables the tslm model fit better with the later part of the data.
+
