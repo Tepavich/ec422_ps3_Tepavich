@@ -273,4 +273,31 @@ can_gas_fit |>
   features(.innov, ljung_box, lag = 24)
 #There is visible structure left in the residuals. The Ljung box test came back with a p value of nearly zero meaning we reject the null hypothesis of white noise.
 
+gas_cv_fc <- can_gas |>
+  select(Month, Volume) |>
+  stretch_tsibble(.init = 240, .step = 1) |>
+  model(snaive = SNAIVE(Volume),
+        tslm   = TSLM(log(Volume) ~ trend() + season())) |>
+  forecast(h = 1)
+
+gas_cv_fc |>
+  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE))
+
+#the first and last forecasts are on January 1980 and 2005
+#the snaive model had an MAE=0.562 and an RMSE=0.702
+#the tslm model had an MAE=4.01 and an RMSE=4.36
+#based on these metrics, the snaive model has better forecast accuracy. Both the MAE and RMSE agree.
+
+errs <- gas_cv_fc |>
+  as_tibble() |>
+  left_join(as_tibble(can_gas) |> select(Month, actual = Volume),
+            by = "Month") |>
+  mutate(e = actual - .mean) |>
+  select(Month, .model, e) |>
+  pivot_wider(names_from = .model, values_from = e) |>
+  na.omit()
+
+forecast::dm.test(errs$snaive, errs$tslm, h = 1, power = 1)
+#DM stat = -31.278; pvalue < 2.2e-16
+#Reject the null hypothesis of equal forecast accuracy meaning the models were significantly different. 
 
